@@ -61,17 +61,16 @@
 
         </div>
     </div>
-        <script>
+
+    <script>
         async function searchGigling() {
             const id = document.getElementById('giglingId').value;
             if (!id) return alert('Будь ласка, введіть ID!');
 
-            // Тимчасові випадкові дані для тесту
             const races = Math.floor(Math.random() * 61); 
             const wins = Math.floor(Math.random() * (races + 1));
             const rate = races > 0 ? ((wins / races) * 100).toFixed(1) : 0;
 
-            // Відображаємо результати на сторінці
             document.getElementById('results').classList.remove('hidden');
             document.getElementById('raceCount').innerText = races + ' / 60';
             document.getElementById('winCount').innerText = wins;
@@ -84,27 +83,24 @@
                 document.getElementById('limitWarning').classList.add('hidden');
             }
 
-            // Статус завантаження для ШІ
             document.getElementById('aiComment').innerText = "Gigus Maximus аналізує твої нікчемні забіги...";
 
-            // Надсилаємо запит до нашого ШІ-ендпоінту у Vercel
             try {
                 const response = await fetch('/api/chat.js', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ races, wins, id })
                 });
-                
                 const data = await response.json();
-                
                 if (data.comment) {
                     document.getElementById('aiComment').innerText = data.comment;
                 } else {
-                    document.getElementById('aiComment').innerText = "Gigus Maximus проігнорував твій запит.";
+                    document.getElementById('aiComment').innerText = "Gigus Maximus зневажає твої запити і мовчить.";
                 }
             } catch (error) {
-                document.getElementById('aiComment').innerText = "Помилка зв'язку. Доступ до ШІ заблоковано.";
+                document.getElementById('aiComment').innerText = "ШІ тимчасово офлайн, але інтерфейс працює!";
             }
+        }
     </script>
 </body>
 </html>
