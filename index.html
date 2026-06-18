@@ -61,38 +61,50 @@
 
         </div>
     </div>
-
-    <script>
-        function searchGigling() {
+        <script>
+        async function searchGigling() {
             const id = document.getElementById('giglingId').value;
             if (!id) return alert('Будь ласка, введіть ID!');
 
             // Тимчасові випадкові дані для тесту
-            const races = Math.floor(Math.random() * 61); // від 0 до 60
+            const races = Math.floor(Math.random() * 61); 
             const wins = Math.floor(Math.random() * (races + 1));
             const rate = races > 0 ? ((wins / races) * 100).toFixed(1) : 0;
 
-            // Показуємо блок з результатами
+            // Відображаємо результати на сторінці
             document.getElementById('results').classList.remove('hidden');
-
-            // Оновлюємо текст на сторінці
             document.getElementById('raceCount').innerText = races + ' / 60';
             document.getElementById('winCount').innerText = wins;
             document.getElementById('winRate').innerText = rate + '%';
-            
-            // Рухаємо шкалу прогресу
             document.getElementById('progressBar').style.width = (races / 60 * 100) + '%';
 
-            // Якщо гонок 60, показуємо попередження
             if (races >= 60) {
                 document.getElementById('limitWarning').classList.remove('hidden');
             } else {
                 document.getElementById('limitWarning').classList.add('hidden');
             }
 
-            // Тимчасовий текст для ШІ
-            document.getElementById('aiComment').innerText = "Гіглінг #" + id + " пробіг " + races + " гонок. Непогано, але OpenRouter скоро дасть мені справжній голос!";
-        }
+            // Статус завантаження для ШІ
+            document.getElementById('aiComment').innerText = "Gigus Maximus аналізує твої нікчемні забіги...";
+
+            // Надсилаємо запит до нашого ШІ-ендпоінту у Vercel
+            try {
+                const response = await fetch('/api/chat.js', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ races, wins, id })
+                });
+                
+                const data = await response.json();
+                
+                if (data.comment) {
+                    document.getElementById('aiComment').innerText = data.comment;
+                } else {
+                    document.getElementById('aiComment').innerText = "Gigus Maximus проігнорував твій запит.";
+                }
+            } catch (error) {
+                document.getElementById('aiComment').innerText = "Помилка зв'язку. Доступ до ШІ заблоковано.";
+            }
     </script>
 </body>
 </html>
