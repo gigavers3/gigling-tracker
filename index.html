@@ -3,104 +3,106 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Gigaverse Gigling Tracker</title>
+    <title>Gigaverse Real Tracker</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.7.0/ethers.umd.min.js"></script>
 </head>
 <body class="min-h-screen bg-slate-950 text-slate-50 flex flex-col items-center justify-center p-6">
 
     <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
-        
-        <h1 class="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-2">
-            ⚡ GIGLING RACING TRACKER
+        <h1 class="text-xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-4">
+            📊 REAL-TIME ONCHAIN SCANNER
         </h1>
-        <p class="text-xs text-slate-400 text-center mb-6">Аналітика Gigaverse • Точні Живі Дані</p>
 
         <div class="flex gap-2 mb-6">
-            <input
-                id="giglingId"
-                type="number"
-                placeholder="Введіть ID Гіглінга (напр. 12365)"
-                class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500 text-white"
-            />
-            <button
-                id="analyzeBtn"
-                onclick="searchGigling()"
-                class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
-            >
-                Аналіз
-            </button>
+            <input id="giglingId" type="number" placeholder="Введіть ID Гіглінга" class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm text-white"/>
+            <button onclick="scanOnchainLogs()" id="scanBtn" class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold transition">Сканувати</button>
         </div>
 
         <div id="results" class="hidden space-y-4">
-            
             <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
                 <div class="flex justify-between text-xs font-semibold mb-1">
-                    <span class="text-slate-400">⚔️ Всього зіграно гонок</span>
-                    <span id="raceCount" class="text-purple-400">0 / 60</span>
-                </div>
-                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                    <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-500" style="width: 0%"></div>
+                    <span class="text-slate-400">⚔️ Знайдено гонок в івентах:</span>
+                    <span id="raceCount" class="text-purple-400">0</span>
                 </div>
             </div>
-
             <div class="grid grid-cols-2 gap-3">
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-center items-center">
-                    <span class="text-[11px] text-slate-400">🏆 Перемоги (1-ше місце)</span>
-                    <span id="winCount" class="text-lg font-bold mt-1">0</span>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
+                    <span class="text-[11px] text-slate-400">🏆 Перемоги</span>
+                    <span id="winCount" class="text-lg font-bold block mt-1">0</span>
                 </div>
-                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-center items-center">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 text-center">
                     <span class="text-[11px] text-slate-400">📈 Вінрейт</span>
-                    <span id="winRate" class="text-lg font-bold text-emerald-400 mt-1">0%</span>
+                    <span id="winRate" class="text-lg font-bold text-emerald-400 block mt-1">0%</span>
                 </div>
             </div>
-
-            <div class="bg-purple-950/30 border border-purple-900/50 p-3 rounded-xl">
-                <p class="text-[10px] font-bold text-purple-400 mb-1">💬 GIGUS MAXIMUS КАЖЕ:</p>
-                <p id="aiComment" class="text-xs italic text-purple-200">Очікування...</p>
-            </div>
-
+            <p id="statusText" class="text-xs italic text-slate-400 text-center mt-2"></p>
         </div>
     </div>
 
     <script>
-        async function searchGigling() {
+        const RPC_URL = 'https://api.abs.xyz';
+        const CONTRACT_ADDRESS = '0x0ba76cfc1735327e26018bc9aaf680c652e72f82';
+
+        // Сигнатура реального івенту завершення гонки (можна знайти в експлорері Abstract)
+        const ABI = [
+            "event RaceResolved(uint256 indexed raceId, uint256[] finalRanking)"
+        ];
+
+        async function scanOnchainLogs() {
             const idInput = document.getElementById('giglingId').value.trim();
-            if (!idInput) return alert('Будь ласка, введіть ID!');
+            if (!idInput) return alert('Введіть ID!');
 
-            const btn = document.getElementById('analyzeBtn');
+            const btn = document.getElementById('scanBtn');
             btn.disabled = true;
-            btn.innerText = "Пошук...";
-
+            btn.innerText = "Сканування...";
+            
             document.getElementById('results').classList.remove('hidden');
-            document.getElementById('aiComment').innerText = "Зчитую базу даних Gigaverse...";
+            document.getElementById('statusText').innerText = "Починаю глибоке сканування блоків Abstract RPC...";
 
             try {
-                const response = await fetch('/api/chat.js', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ id: idInput })
+                const provider = new ethers.JsonRpcProvider(RPC_URL);
+                const contract = new ethers.Contract(CONTRACT_ADDRESS, ABI, provider);
+                
+                const targetId = BigInt(idInput);
+                const currentBlock = await provider.getBlockNumber();
+                
+                // Беремо зріз останніх 50,000 блоків, де йдуть активні перегони
+                const fromBlock = currentBlock - 50000 > 0 ? currentBlock - 50000 : 0;
+                
+                const filter = contract.filters.RaceResolved();
+                const logs = await contract.queryFilter(filter, fromBlock, 'latest');
+
+                let totalRaces = 0;
+                let totalWins = 0;
+
+                document.getElementById('statusText').innerText = `Знайдено ${logs.length} загальних івентів. Фільтрую під ID #${idInput}...`;
+
+                logs.forEach(log => {
+                    const ranking = log.args.finalRanking;
+                    if (ranking) {
+                        // Перевіряємо чи брав участь наш пет
+                        const index = ranking.findIndex(id => BigInt(id) === targetId);
+                        if (index !== -1) {
+                            totalRaces++;
+                            if (index === 0) totalWins++; // Перше місце в масиві — переможець
+                        }
+                    }
                 });
 
-                if (!response.ok) throw new Error('Помилка відповіді');
-                const data = await response.json();
+                const rate = totalRaces > 0 ? ((totalWins / totalRaces) * 100).toFixed(1) : "0.0";
 
-                const races = data.races;
-                const wins = data.wins;
-                const rate = races > 0 ? ((wins / races) * 100).toFixed(1) : "0.0";
-
-                // Оновлення інтерфейсу
-                document.getElementById('raceCount').innerText = `${races} / 60`;
-                document.getElementById('winCount').innerText = wins;
+                document.getElementById('raceCount').innerText = totalRaces;
+                document.getElementById('winCount').innerText = totalWins;
                 document.getElementById('winRate').innerText = `${rate}%`;
-                document.getElementById('progressBar').style.width = `${Math.min((races / 60 * 100), 100)}%`;
-                document.getElementById('aiComment').innerText = data.comment;
+                document.getElementById('statusText').innerText = "Аналіз логів завершено. Дані отримано безпосередньо з емітованих івентів контракту!";
 
             } catch (error) {
                 console.error(error);
-                document.getElementById('aiComment').innerText = "Сталася помилка з'єднання. Спробуйте ще раз.";
+                document.getElementById('statusText').innerText = "Помилка читання логів з RPC. Можливо, встановлено ліміт на запити (Rate Limit).";
             } finally {
                 btn.disabled = false;
-                btn.innerText = "Аналіз";
+                btn.innerText = "Сканувати";
             }
         }
     </script>
