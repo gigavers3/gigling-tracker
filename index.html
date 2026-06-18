@@ -2,14 +2,97 @@
 <html lang="uk">
 <head>
     <meta charset="UTF-8">
-    <title>Gigaverse Tracker</title>
-    <style>
-        body { background: #0b0f19; color: white; font-family: sans-serif; text-align: center; padding-top: 50px; }
-        h1 { color: #a855f7; }
-    </style>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gigaverse Gigling Tracker</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-    <h1>⚡ GIGLING RACING TRACKER ⚡</h1>
-    <p>Сайт підключено! Наступним кроком ми зробимо форму пошуку.</p>
+<body class="min-h-screen bg-slate-950 text-slate-50 flex flex-col items-center justify-center p-6">
+
+    <div class="w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl p-6 shadow-2xl">
+        
+        <h1 class="text-2xl font-bold text-center bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent mb-2">
+            ⚡ GIGLING RACING TRACKER
+        </h1>
+        <p class="text-xs text-slate-400 text-center mb-6">Хакатон Спешл • Ліміт гонок (max 60)</p>
+
+        <div class="flex gap-2 mb-6">
+            <input
+                id="giglingId"
+                type="text"
+                placeholder="Введіть ID Гіглінга (напр. 1337)"
+                class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500 text-white"
+            />
+            <button
+                onclick="searchGigling()"
+                class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
+            >
+                Стата
+            </button>
+        </div>
+
+        <div id="results" class="hidden space-y-4">
+            
+            <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <div class="flex justify-between text-xs font-semibold mb-1">
+                    <span class="text-slate-400">⚔️ Зіграно гонок</span>
+                    <span id="raceCount" class="text-purple-400">0 / 60</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
+                    <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-500" style="width: 0%"></div>
+                </div>
+                <p id="limitWarning" class="text-[10px] text-red-400 mt-1 hidden">⚠️ Ліміт гонок на сьогодні вичерпано!</p>
+            </div>
+
+            <div class="grid grid-cols-2 gap-3">
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-center items-center">
+                    <span class="text-[11px] text-slate-400">🏆 Перемоги</span>
+                    <span id="winCount" class="text-lg font-bold mt-1">0</span>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-xl border border-slate-800 flex flex-col justify-center items-center">
+                    <span class="text-[11px] text-slate-400">📈 Вінрейт</span>
+                    <span id="winRate" class="text-lg font-bold text-emerald-400 mt-1">0%</span>
+                </div>
+            </div>
+
+            <div class="bg-purple-950/30 border border-purple-900/50 p-3 rounded-xl">
+                <p class="text-[10px] font-bold text-purple-400 mb-1">💬 GIGUS MAXIMUS КАЖЕ:</p>
+                <p id="aiComment" class="text-xs italic text-purple-200">"Аналізую твої гонки..."</p>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        function searchGigling() {
+            const id = document.getElementById('giglingId').value;
+            if (!id) return alert('Будь ласка, введіть ID!');
+
+            // Тимчасові випадкові дані для тесту
+            const races = Math.floor(Math.random() * 61); // від 0 до 60
+            const wins = Math.floor(Math.random() * (races + 1));
+            const rate = races > 0 ? ((wins / races) * 100).toFixed(1) : 0;
+
+            // Показуємо блок з результатами
+            document.getElementById('results').classList.remove('hidden');
+
+            // Оновлюємо текст на сторінці
+            document.getElementById('raceCount').innerText = races + ' / 60';
+            document.getElementById('winCount').innerText = wins;
+            document.getElementById('winRate').innerText = rate + '%';
+            
+            // Рухаємо шкалу прогресу
+            document.getElementById('progressBar').style.width = (races / 60 * 100) + '%';
+
+            // Якщо гонок 60, показуємо попередження
+            if (races >= 60) {
+                document.getElementById('limitWarning').classList.remove('hidden');
+            } else {
+                document.getElementById('limitWarning').classList.add('hidden');
+            }
+
+            // Тимчасовий текст для ШІ
+            document.getElementById('aiComment').innerText = "Гіглінг #" + id + " пробіг " + races + " гонок. Непогано, але OpenRouter скоро дасть мені справжній голос!";
+        }
+    </script>
 </body>
 </html>
