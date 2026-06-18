@@ -19,10 +19,11 @@
             <input
                 id="giglingId"
                 type="number"
-                placeholder="Введіть ID Гіглінга (напр. 13667)"
+                placeholder="Введіть ID Гіглінга (напр. 12365)"
                 class="flex-1 bg-slate-950 border border-slate-700 rounded-lg px-4 py-2 text-sm focus:outline-none focus:border-purple-500 text-white"
             />
             <button
+                id="analyzeBtn"
                 onclick="searchGigling()"
                 class="bg-purple-600 hover:bg-purple-500 px-4 py-2 rounded-lg text-sm font-semibold transition"
             >
@@ -40,7 +41,6 @@
                 <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
                     <div id="progressBar" class="bg-gradient-to-r from-purple-500 to-pink-500 h-full transition-all duration-500" style="width: 0%"></div>
                 </div>
-                <p id="limitWarning" class="text-[10px] text-red-400 mt-1 hidden">⚠️ Кар'єрний ліміт гонок вичерпано!</p>
             </div>
 
             <div class="grid grid-cols-2 gap-3">
@@ -56,7 +56,7 @@
 
             <div class="bg-purple-950/30 border border-purple-900/50 p-3 rounded-xl">
                 <p class="text-[10px] font-bold text-purple-400 mb-1">💬 GIGUS MAXIMUS КАЖЕ:</p>
-                <p id="aiComment" class="text-xs italic text-purple-200">"Аналізую запит..."</p>
+                <p id="aiComment" class="text-xs italic text-purple-200">Очікування...</p>
             </div>
 
         </div>
@@ -67,43 +67,40 @@
             const idInput = document.getElementById('giglingId').value.trim();
             if (!idInput) return alert('Будь ласка, введіть ID!');
 
+            const btn = document.getElementById('analyzeBtn');
+            btn.disabled = true;
+            btn.innerText = "Пошук...";
+
             document.getElementById('results').classList.remove('hidden');
-            document.getElementById('aiComment').innerText = "Запит обробляється через сервер аналітики...";
+            document.getElementById('aiComment').innerText = "Зчитую базу даних Gigaverse...";
 
             try {
-                // Надсилаємо ID на наш бекенд Vercel Serverless Function
                 const response = await fetch('/api/chat.js', {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ id: idInput })
                 });
 
-                if (!response.ok) throw new Error('Помилка сервера');
+                if (!response.ok) throw new Error('Помилка відповіді');
                 const data = await response.json();
 
-                // Отримуємо ідеально точні та правдиві дані
                 const races = data.races;
                 const wins = data.wins;
                 const rate = races > 0 ? ((wins / races) * 100).toFixed(1) : "0.0";
 
-                // Оновлюємо інтерфейс трекера
+                // Оновлення інтерфейсу
                 document.getElementById('raceCount').innerText = `${races} / 60`;
                 document.getElementById('winCount').innerText = wins;
                 document.getElementById('winRate').innerText = `${rate}%`;
                 document.getElementById('progressBar').style.width = `${Math.min((races / 60 * 100), 100)}%`;
-
-                if (races >= 60) {
-                    document.getElementById('limitWarning').classList.remove('hidden');
-                } else {
-                    document.getElementById('limitWarning').classList.add('hidden');
-                }
-
-                // Виводимо коментар від ШІ
-                document.getElementById('aiComment').innerText = data.comment || "Статистику успішно оновлено!";
+                document.getElementById('aiComment').innerText = data.comment;
 
             } catch (error) {
                 console.error(error);
-                document.getElementById('aiComment').innerText = "Не вдалося отримати дані. Спробуйте ще раз.";
+                document.getElementById('aiComment').innerText = "Сталася помилка з'єднання. Спробуйте ще раз.";
+            } finally {
+                btn.disabled = false;
+                btn.innerText = "Аналіз";
             }
         }
     </script>
